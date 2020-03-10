@@ -1,0 +1,6 @@
+[all:vars]
+username=admin
+password=admin
+
+[sdwan]
+10.97.4.223

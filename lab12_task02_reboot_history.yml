@@ -1,0 +1,51 @@
+- name: MAKING API CALLS USING THE REAL TIME API
+  hosts: all 
+  connection: local 
+  gather_facts: no 
+
+  tasks:
+    - name: ENSURE REPORTS DIRECTORY EXISTS
+      file:
+        path: ./reports
+        state: directory
+      run_once: true 
+    - name: GET COOKIE WITH POST 
+      uri: 
+        url: "https://{{ inventory_hostname }}/j_security_check" 
+        method: POST 
+        body: 
+          j_username: "{{ username }}" 
+          j_password: "{{ password }}" 
+        body_format: form-urlencoded 
+        return_content: yes 
+        validate_certs: no 
+      register: login_data 
+
+    - name: ASSIGN THE SESSION COOKIE TO A VARIABLE 
+      set_fact: 
+        vmanage_cookie: "{{ login_data.set_cookie }}" 
+
+    - name: VIEW THE COOKIE 
+      debug: 
+        var: vmanage_cookie 
+
+    - name: PAUSE FOR VIEWING THE COOKIE 
+      pause: 
+        seconds: 3
+    - name: GET REBOOT HISTORY DETAILS
+      uri:
+        url: "https://{{ inventory_hostname }}/dataservice/device/reboothistory/details"
+        method: GET
+        headers:
+          Cookie: "{{ vmanage_cookie }}"
+        return_content: yes
+        validate_certs: no
+      register: reboot_history
+    - name: PRINT REBOOT HISTORY
+      debug:
+        var: reboot_history
+
+    - name:  CREATE REBOOT STATS REPORT
+      template:
+        src: reboot-history-report.j2
+        dest: ./reports/reboot-history.txt
